@@ -7,6 +7,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 const ChatWidget = ({ onLeadsUpdated }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -203,6 +204,13 @@ const ChatWidget = ({ onLeadsUpdated }) => {
 
   const toggleChat = () => {
     setIsOpen(!isOpen);
+    if (!isOpen) {
+      setIsCollapsed(false);
+    }
+  };
+
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
   };
 
   const handleConfirmAction = (confirmationMessage) => {
@@ -252,26 +260,49 @@ const ChatWidget = ({ onLeadsUpdated }) => {
 
   return (
     <div className="chat-widget">
-      <ChatButton 
-        isOpen={isOpen} 
-        onClick={toggleChat}
-        hasUnreadMessages={false}
-      />
+      {/* Show chat button when closed OR when collapsed */}
+      {(!isOpen || isCollapsed) && (
+        <ChatButton 
+          isOpen={false} // Always show as closed state (blue bubble)
+          onClick={isCollapsed ? toggleCollapse : toggleChat}
+          hasUnreadMessages={false}
+        />
+      )}
       
-      {isOpen && (
+      {/* Only show red X button when chat is open AND not collapsed */}
+      {isOpen && !isCollapsed && (
+        <ChatButton 
+          isOpen={true} // Show as open state (red X button)
+          onClick={toggleChat}
+          hasUnreadMessages={false}
+        />
+      )}
+      
+      {isOpen && !isCollapsed && (
         <div className="chat-interface">
           <div className="chat-header">
             <h3>CRM Assistant</h3>
-            <button 
-              className="clear-button"
-              onClick={clearConversation}
-              title="Clear conversation"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="3,6 5,6 21,6"></polyline>
-                <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2v2"></path>
-              </svg>
-            </button>
+            <div className="header-controls">
+              <button 
+                className="minimize-button"
+                onClick={toggleCollapse}
+                title="Minimize chat"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </button>
+              <button 
+                className="clear-button"
+                onClick={clearConversation}
+                title="Clear conversation"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="3,6 5,6 21,6"></polyline>
+                  <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2v2"></path>
+                </svg>
+              </button>
+            </div>
           </div>
           
           <div className="chat-messages">

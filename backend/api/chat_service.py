@@ -218,13 +218,13 @@ class ChatService:
         return [
             {
                 "name": "search_leads",
-                "description": "Search for leads by name, company, or email",
+                "description": "Search for leads by name, company, email, or other lead data",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "query": {
                             "type": "string",
-                            "description": "Search query (name, company, or email)"
+                            "description": "Search query (name, company, email, or other lead data)"
                         }
                     },
                     "required": ["query"]
@@ -400,9 +400,6 @@ class ChatService:
         """
         try:
             # Debug logging
-            print(f"EXECUTE_FUNCTION_CALL: Function called: {function_name} with arguments: {arguments}")
-            print(f"EXECUTE_FUNCTION_CALL: Session key: {session_key}")
-            
             if session_key:
                 pending = self.get_pending_deletions(session_key)
                 print(f"EXECUTE_FUNCTION_CALL: Pending deletions: {pending}")
@@ -526,7 +523,6 @@ class ChatService:
                     print("DEBUG: No session key provided!")
                 
                 confirmation_message = f"⚠️ Are you sure you want to delete '{lead.get('name', 'Unknown')}'?\n\nThis action cannot be undone. Please confirm by saying 'yes, delete {lead.get('name', 'this lead')}' or 'confirm deletion'."
-                print(f"DEBUG: Returning confirmation message: {confirmation_message}")
                 
                 result = {
                     "success": True,
@@ -636,6 +632,7 @@ CRITICAL DELETION RULES:
 4. Only use confirm_delete_lead when user says "yes", "confirm", "delete it", etc. AND there are pending deletions
 5. Check pending deletions to know which leads are awaiting confirmation
 6. If user cancels, just acknowledge (no function call needed)
+7. Distinguish between removing information from a lead and deleting a lead.
 
 Be formal but brief in responses. When referencing leads from conversation context, use smart matching to identify the correct lead."""
             }
@@ -662,12 +659,8 @@ Be formal but brief in responses. When referencing leads from conversation conte
                 function_name = response_message.function_call.name
                 function_args = json.loads(response_message.function_call.arguments)
                 
-                print(f"PROCESS_MESSAGE: OpenAI called function: {function_name}")
-                print(f"PROCESS_MESSAGE: Function arguments: {function_args}")
-                
                 # Execute the function
                 result = self.execute_function_call(function_name, function_args, leads, session_key)
-                print(f"PROCESS_MESSAGE: Function execution result: {result}")
                 function_results.append({
                     "function": function_name,
                     "arguments": function_args,
