@@ -10,16 +10,17 @@
 
 ### Railway Setup
 1. [ ] Create new Railway project
-2. [ ] Connect GitHub repository
-3. [ ] Add environment variables:
+2. [ ] Connect GitHub repository  
+3. [ ] Railway will auto-detect Python/Django from Procfile and requirements.txt
+4. [ ] Add environment variables:
    - [ ] `SECRET_KEY=your-secret-key-here`
    - [ ] `DEBUG=False`
    - [ ] `SUPABASE_URL=your-supabase-url`
    - [ ] `SUPABASE_KEY=your-supabase-key`
    - [ ] `OPENAI_API_KEY=your-openai-key`
    - [ ] `CORS_ALLOW_ALL_ORIGINS=True` (temporarily)
-4. [ ] Add Redis service for Celery
-5. [ ] Deploy and get Railway URL
+5. [ ] Add Redis service for Celery (separate service)
+6. [ ] Deploy and get Railway URL
 
 ## 🔺 Vercel Frontend Deployment
 
