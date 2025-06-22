@@ -20,7 +20,7 @@ body {
   flex-direction: column;
 }
 
-.main-content {
+.main-content { /* Main content of the app */
   flex: 1;
 }
 
