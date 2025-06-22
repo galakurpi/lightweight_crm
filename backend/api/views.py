@@ -402,6 +402,11 @@ def chat_message(request):
                     {'error': 'Conversation not found'}, 
                     status=status.HTTP_404_NOT_FOUND
                 )
+            
+            # If this is a "New Chat" conversation, update the title with the first message
+            if conversation.get('title') == 'New Chat':
+                new_title = SupabaseService.generate_conversation_title(message)
+                SupabaseService.update_conversation(conversation_id, {'title': new_title}, user_id)
         
         # Save user message to database
         SupabaseService.create_message(conversation_id, message, is_user=True)
@@ -412,7 +417,7 @@ def chat_message(request):
         session_key = request.session.session_key
         
         # Initiate async task with conversation_id and user_id
-        task = process_chat_message.delay(message, session_key, conversation_id, user_id)
+        task = process_chat_message.delay(message, session_key, conversation_id=conversation_id, user_id=user_id)
         
         return Response({
             'task_id': task.id,

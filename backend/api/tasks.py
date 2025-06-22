@@ -9,20 +9,23 @@ from .chat_service import ChatService
 openai.api_key = settings.OPENAI_API_KEY
 
 @shared_task(bind=True)
-def process_chat_message(self, message, session_key, conversation_id=None, user_id=None):
+def process_chat_message(self, message, session_key, **kwargs):
     """
     Background task to process chat messages with OpenAI
     
     Args:
         message (str): User's chat message
         session_key (str): Django session key for context storage
-        conversation_id (str): ID of the conversation for message persistence
-        user_id (str): ID of the user for lead filtering
+        **kwargs: Additional arguments including conversation_id and user_id
     
     Returns:
         dict: Response containing AI message and any lead operations performed
     """
     try:
+        # Extract parameters from kwargs
+        conversation_id = kwargs.get('conversation_id')
+        user_id = kwargs.get('user_id')
+        
         # Update task status
         self.update_state(state='PROCESSING', meta={'status': 'Processing your message...'})
         

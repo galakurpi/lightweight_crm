@@ -44,10 +44,37 @@ CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages(conversation
 CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_leads_user_id ON leads(user_id);
 
--- 6. Create default admin user (password will be set via Django management command)
-INSERT INTO users (email, password_hash, is_admin, first_name, last_name) 
-VALUES ('admin@crm.local', 'pbkdf2_sha256$600000$placeholder$hash', TRUE, 'Admin', 'User')
-ON CONFLICT (email) DO NOTHING;
+-- 6. Create default admin user
+-- First, temporarily disable RLS to allow user creation
+ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+
+-- Delete existing admin user if exists
+DELETE FROM users WHERE email = 'admin@crm.local';
+
+-- Insert admin user with proper password hash for 'admin123'
+INSERT INTO users (
+    id, 
+    email, 
+    password_hash, 
+    is_admin, 
+    first_name, 
+    last_name, 
+    is_active, 
+    date_joined, 
+    created_at, 
+    updated_at
+) VALUES (
+    gen_random_uuid(),
+    'admin@crm.local',
+    'pbkdf2_sha256$600000$0tak1PsAWvlN5ql5b0qdEe$97ycFXjFzxjBnoPRVadjB/W3qiGXL3ittYXjFM5NMWc=',
+    true,
+    'Admin',
+    'User',
+    true,
+    NOW(),
+    NOW(),
+    NOW()
+);
 
 -- 7. Get the admin user ID for leads migration
 DO $$
@@ -61,30 +88,52 @@ BEGIN
 END $$;
 
 -- 8. Add Row Level Security (RLS) policies for data isolation
+-- Re-enable RLS for users table with proper policies
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for users table (users can only see their own data)
-CREATE POLICY "Users can view own profile" ON users
-    FOR SELECT USING (auth.uid()::text = id::text);
+-- Drop any existing policies first
+DROP POLICY IF EXISTS "Users can view own profile" ON users;
+DROP POLICY IF EXISTS "Users can update own profile" ON users;
+DROP POLICY IF EXISTS "Allow login access" ON users;
+DROP POLICY IF EXISTS "Users can read their own data" ON users;
+DROP POLICY IF EXISTS "Enable read access for authentication" ON users;
+DROP POLICY IF EXISTS "Prevent client modifications" ON users;
+DROP POLICY IF EXISTS "Prevent client updates" ON users;
+DROP POLICY IF EXISTS "Prevent client deletes" ON users;
 
-CREATE POLICY "Users can update own profile" ON users
-    FOR UPDATE USING (auth.uid()::text = id::text);
+-- RLS Policies for users table (allow authentication but prevent client modifications)
+CREATE POLICY "Enable read access for authentication" ON users
+    FOR SELECT 
+    USING (true);
+
+CREATE POLICY "Prevent client modifications" ON users
+    FOR INSERT 
+    WITH CHECK (false);
+
+CREATE POLICY "Prevent client updates" ON users
+    FOR UPDATE 
+    USING (false);
+
+CREATE POLICY "Prevent client deletes" ON users
+    FOR DELETE 
+    USING (false);
 
 -- RLS Policies for conversations table
 CREATE POLICY "Users can view own conversations" ON conversations
-    FOR SELECT USING (auth.uid()::text = user_id::text);
+    FOR SELECT USING (user_id::text = current_setting('app.current_user_id', true));
 
 CREATE POLICY "Users can insert own conversations" ON conversations
-    FOR INSERT WITH CHECK (auth.uid()::text = user_id::text);
+    FOR INSERT WITH CHECK (user_id::text = current_setting('app.current_user_id', true));
 
 CREATE POLICY "Users can update own conversations" ON conversations
-    FOR UPDATE USING (auth.uid()::text = user_id::text);
+    FOR UPDATE USING (user_id::text = current_setting('app.current_user_id', true))
+    WITH CHECK (user_id::text = current_setting('app.current_user_id', true));
 
 CREATE POLICY "Users can delete own conversations" ON conversations
-    FOR DELETE USING (auth.uid()::text = user_id::text);
+    FOR DELETE USING (user_id::text = current_setting('app.current_user_id', true));
 
 -- RLS Policies for messages table
 CREATE POLICY "Users can view messages in own conversations" ON messages
@@ -92,7 +141,7 @@ CREATE POLICY "Users can view messages in own conversations" ON messages
         EXISTS (
             SELECT 1 FROM conversations 
             WHERE conversations.id = messages.conversation_id 
-            AND conversations.user_id::text = auth.uid()::text
+            AND conversations.user_id::text = current_setting('app.current_user_id', true)
         )
     );
 
@@ -101,22 +150,23 @@ CREATE POLICY "Users can insert messages in own conversations" ON messages
         EXISTS (
             SELECT 1 FROM conversations 
             WHERE conversations.id = messages.conversation_id 
-            AND conversations.user_id::text = auth.uid()::text
+            AND conversations.user_id::text = current_setting('app.current_user_id', true)
         )
     );
 
 -- RLS Policies for leads table
 CREATE POLICY "Users can view own leads" ON leads
-    FOR SELECT USING (auth.uid()::text = user_id::text);
+    FOR SELECT USING (user_id::text = current_setting('app.current_user_id', true));
 
 CREATE POLICY "Users can insert own leads" ON leads
-    FOR INSERT WITH CHECK (auth.uid()::text = user_id::text);
+    FOR INSERT WITH CHECK (user_id::text = current_setting('app.current_user_id', true));
 
 CREATE POLICY "Users can update own leads" ON leads
-    FOR UPDATE USING (auth.uid()::text = user_id::text);
+    FOR UPDATE USING (user_id::text = current_setting('app.current_user_id', true))
+    WITH CHECK (user_id::text = current_setting('app.current_user_id', true));
 
 CREATE POLICY "Users can delete own leads" ON leads
-    FOR DELETE USING (auth.uid()::text = user_id::text);
+    FOR DELETE USING (user_id::text = current_setting('app.current_user_id', true));
 
 -- 9. Create functions for updating timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -146,8 +196,42 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Verification queries (run these to confirm setup)
+-- 12. Verify admin user creation and setup
+DO $$
+DECLARE
+    user_count INTEGER;
+    admin_email TEXT;
+BEGIN
+    SELECT COUNT(*) INTO user_count 
+    FROM users 
+    WHERE email = 'admin@crm.local' AND is_admin = true;
+    
+    IF user_count > 0 THEN
+        SELECT email INTO admin_email 
+        FROM users 
+        WHERE email = 'admin@crm.local' AND is_admin = true;
+        
+        RAISE NOTICE '✅ Admin user created successfully!';
+        RAISE NOTICE '📧 Email: %', admin_email;
+        RAISE NOTICE '🔑 Password: admin123';
+        RAISE NOTICE '🔒 RLS enabled with proper authentication policies';
+    ELSE
+        RAISE NOTICE '❌ Failed to create admin user';
+    END IF;
+END $$;
+
+-- 13. Display final setup status
+SELECT 
+    '✅ SETUP COMPLETE' as status,
+    email as login_email,
+    'admin123' as login_password,
+    is_admin as admin_privileges,
+    first_name || ' ' || last_name as full_name,
+    created_at as created_on
+FROM users 
+WHERE email = 'admin@crm.local';
+
+-- Verification queries (uncomment to run additional checks)
 -- SELECT 'Tables created successfully' as status;
 -- SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('users', 'conversations', 'messages');
--- SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'leads' AND column_name = 'user_id';
--- SELECT email, is_admin FROM users WHERE email = 'admin@crm.local'; 
+-- SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'leads' AND column_name = 'user_id'; 

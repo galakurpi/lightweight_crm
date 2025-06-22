@@ -194,6 +194,29 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+.new-chat-button {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+
+.new-chat-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.new-chat-button:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 /* Chat Content Container */
 .chat-content {
   display: flex;

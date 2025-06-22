@@ -163,6 +163,13 @@ const ChatWidget = ({ onLeadsUpdated }) => {
           setConversationRefresh(prev => prev + 1);
         }
         
+        // If this is the first message in a "New Chat" conversation, update the title
+        if (currentConversationId && data.conversation_id === currentConversationId) {
+          // Check if we need to update the conversation title
+          // This will be handled by the backend when it creates the conversation title
+          setConversationRefresh(prev => prev + 1);
+        }
+        
         setCurrentTaskId(data.task_id);
         // Start polling for task completion
         pollTaskStatus(data.task_id);
@@ -230,16 +237,59 @@ const ChatWidget = ({ onLeadsUpdated }) => {
     setCurrentTaskId(null);
   };
 
-  // Handle new conversation
-  const handleNewConversation = () => {
-    setCurrentConversationId(null);
-    setMessages([]);
-    // Stop any ongoing polling
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
+  // Handle new conversation - create empty conversation like ChatGPT
+  const handleNewConversation = async () => {
+    try {
+      // Create a new empty conversation
+      const response = await fetch(`${API_BASE_URL}/conversations/create/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          title: 'New Chat' // Temporary title, will be updated with first message
+        })
+      });
+
+      if (response.ok) {
+        const newConversation = await response.json();
+        
+        // Switch to the new conversation
+        setCurrentConversationId(newConversation.id);
+        setMessages([]);
+        
+        // Stop any ongoing polling
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+        }
+        setIsLoading(false);
+        setCurrentTaskId(null);
+        
+        // Refresh conversation list to show the new conversation
+        setConversationRefresh(prev => prev + 1);
+      } else {
+        console.error('Failed to create new conversation');
+        // Fallback to old behavior
+        setCurrentConversationId(null);
+        setMessages([]);
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+        }
+        setIsLoading(false);
+        setCurrentTaskId(null);
+      }
+    } catch (error) {
+      console.error('Error creating new conversation:', error);
+      // Fallback to old behavior
+      setCurrentConversationId(null);
+      setMessages([]);
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+      setIsLoading(false);
+      setCurrentTaskId(null);
     }
-    setIsLoading(false);
-    setCurrentTaskId(null);
   };
 
   const clearConversation = async () => {
@@ -355,6 +405,15 @@ const ChatWidget = ({ onLeadsUpdated }) => {
           <div className="chat-header">
             <h3>CRM Assistant</h3>
             <div className="header-controls">
+              <button 
+                className="new-chat-button"
+                onClick={handleNewConversation}
+                title="Start new conversation"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2v20M2 12h20"></path>
+                </svg>
+              </button>
               <button 
                 className="sidebar-toggle-button"
                 onClick={() => setShowSidebar(!showSidebar)}
