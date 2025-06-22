@@ -2,6 +2,9 @@
 
 ## Overview
 
+- Modern React app with Kanban CRM, AI chat assistant, and day/night mode toggle
+- Users can switch between light and dark themes; preference is saved automatically
+
 The frontend is a modern React application built with React 19.1.0 that provides a Kanban-style CRM interface with an integrated AI chat assistant. The application uses a component-based architecture with clean separation of concerns and follows modern React patterns including hooks, functional components, and state management.
 
 ## Architecture
@@ -166,6 +169,11 @@ Floating chat interface with asynchronous AI processing:
 3. Task completion triggers message display
 4. Error states handled gracefully
 
+### Header.js - Navigation Bar
+- CRM title, subtitle, refresh and add lead buttons
+- Includes a day/night mode toggle button for switching between light and dark themes
+- Toggle uses sun/moon icons and updates the theme instantly
+
 ## Styling Architecture
 
 ### CSS Organization
@@ -182,6 +190,12 @@ Floating chat interface with asynchronous AI processing:
 - Danger: #ff7675 (red)
 - Text: #2d3436 (dark gray)
 - Background: #f8f9fa (light gray)
+- Supports both light and dark color schemes via theme toggle
+- Theme is managed with CSS custom properties and transitions for a smooth experience
+
+**User Experience:**
+- Theme preference is stored in localStorage and applied on future visits
+- All UI components adapt colors and backgrounds based on the selected theme
 
 **Typography:**
 - Font Stack: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto

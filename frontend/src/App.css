@@ -1,4 +1,46 @@
 /* Global styles for the CRM application */
+
+/* Theme variables */
+:root {
+  /* Light theme (default) */
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e9ecef;
+  --text-primary: #2d3436;
+  --text-secondary: #636e72;
+  --text-muted: #868e96;
+  --border-color: #dee2e6;
+  --shadow-light: rgba(0, 0, 0, 0.1);
+  --shadow-medium: rgba(0, 0, 0, 0.15);
+  --accent-primary: #6c5ce7;
+  --accent-success: #00b894;
+  --accent-warning: #fdcb6e;
+  --accent-danger: #ff7675;
+  --scrollbar-track: #f1f3f4;
+  --scrollbar-thumb: #ddd;
+  --scrollbar-thumb-hover: #bbb;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3a3a3a;
+  --text-primary: #f8f9fa;
+  --text-secondary: #adb5bd;
+  --text-muted: #868e96;
+  --border-color: #495057;
+  --shadow-light: rgba(0, 0, 0, 0.3);
+  --shadow-medium: rgba(0, 0, 0, 0.4);
+  --accent-primary: #7c6ce8;
+  --accent-success: #00d2a7;
+  --accent-warning: #fdd835;
+  --accent-danger: #ff8a80;
+  --scrollbar-track: #3a3a3a;
+  --scrollbar-thumb: #555;
+  --scrollbar-thumb-hover: #777;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -10,8 +52,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #f8f9fa;
-  color: #2d3436;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .App {
@@ -31,12 +74,12 @@ body {
   justify-content: center;
   min-height: 100vh;
   font-size: 1.2rem;
-  color: #636e72;
+  color: var(--text-secondary);
 }
 
 /* Error banner */
 .error-banner {
-  background: #ff7675;
+  background: var(--accent-danger);
   color: white;
   padding: 1rem 2rem;
   display: flex;
@@ -66,7 +109,7 @@ body {
 }
 
 .text-muted {
-  color: #636e72;
+  color: var(--text-muted);
 }
 
 .mb-0 {
@@ -99,21 +142,21 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f3f4;
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #ddd;
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #bbb;
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Focus styles for accessibility */
 *:focus {
-  outline: 2px solid #6c5ce7;
+  outline: 2px solid var(--accent-primary);
   outline-offset: 2px;
 }
 

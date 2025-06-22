@@ -1,8 +1,8 @@
 .lead-card {
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 6px;
   border-left: 4px solid #74b9ff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px var(--shadow-light);
   transition: all 0.2s ease;
   cursor: grab;
   overflow: hidden;
@@ -10,7 +10,7 @@
 }
 
 .lead-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px var(--shadow-medium);
   transform: translateY(-1px);
 }
 
@@ -29,7 +29,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6c5ce7, #74b9ff);
+  background: linear-gradient(135deg, var(--accent-primary), #74b9ff);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -48,7 +48,7 @@
   margin: 0 0 0.2rem 0;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #2d3436;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -57,7 +57,7 @@
 .lead-company {
   margin: 0;
   font-size: 0.8rem;
-  color: #636e72;
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -67,7 +67,7 @@
   background: none;
   border: none;
   font-size: 1.1rem;
-  color: #636e72;
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 0.2rem;
   border-radius: 3px;
@@ -76,7 +76,7 @@
 }
 
 .delete-btn:hover {
-  background: #ff7675;
+  background: var(--accent-danger);
   color: white;
 }
 

@@ -1,8 +1,9 @@
 .kanban-board {
   padding: 1.5rem;
-  background: #f8f9fa;
+  background: var(--bg-primary);
   min-height: calc(100vh - 120px);
   overflow-x: auto;
+  transition: background-color 0.3s ease;
 }
 
 .kanban-columns {
@@ -13,29 +14,31 @@
 }
 
 .kanban-column {
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--shadow-light);
   overflow: hidden;
   min-height: 400px;
   width: 280px;
   flex-shrink: 0;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .column-header {
   padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--border-color) 100%);
   border-top: 4px solid #74b9ff;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: background 0.3s ease;
 }
 
 .column-title {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
-  color: #2d3436;
+  color: var(--text-primary);
 }
 
 .column-header-actions {
@@ -45,7 +48,7 @@
 }
 
 .column-count {
-  background: #6c5ce7;
+  background: var(--accent-primary);
   color: white;
   padding: 0.2rem 0.6rem;
   border-radius: 16px;
@@ -70,10 +73,11 @@
   justify-content: center;
   padding: 1.5rem 1rem;
   text-align: center;
-  color: #636e72;
-  border: 2px dashed #ddd;
+  color: var(--text-secondary);
+  border: 2px dashed var(--border-color);
   border-radius: 6px;
   margin-top: 0.5rem;
+  transition: border-color 0.3s ease, color 0.3s ease;
 }
 
 .empty-column p {
@@ -89,8 +93,8 @@
 
 .add-to-column-btn {
   background: none;
-  border: 2px dashed #ddd;
-  color: #636e72;
+  border: 2px dashed var(--border-color);
+  color: var(--text-secondary);
   padding: 0.75rem;
   border-radius: 6px;
   font-size: 0.85rem;
@@ -111,9 +115,9 @@
 }
 
 .add-to-column-btn:hover {
-  background: #f8f9fa;
-  border-color: #6c5ce7;
-  color: #6c5ce7;
+  background: var(--bg-tertiary);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
   transform: translateY(-2px);
 }
 
@@ -128,12 +132,18 @@
 
 /* Drag and drop states */
 .kanban-column.drag-over {
-  background: #f1f3f4;
-  border: 2px dashed #6c5ce7;
+  background: var(--bg-tertiary);
+  border: 2px dashed var(--accent-primary);
 }
 
 .kanban-column.drag-over .column-header {
-  background: #e8f4fd;
+  background: var(--bg-tertiary);
+}
+
+/* Dark theme specific adjustments */
+[data-theme="dark"] .kanban-column.drag-over {
+  background: var(--bg-tertiary);
+  border: 2px dashed var(--accent-primary);
 }
 
 /* Responsive design */
@@ -203,10 +213,10 @@
   }
   
   .add-btn-text {
-    display: none;
+    display: none; /* Hide text on very small screens */
   }
   
   .add-btn-icon {
-    font-size: 1.2rem;
+    font-size: 0.9rem;
   }
 } 

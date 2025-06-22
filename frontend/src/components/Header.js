@@ -1,7 +1,7 @@
 import React from 'react';
 import './Header.css';
 
-const Header = ({ onAddLead, onRefresh }) => {
+const Header = ({ onAddLead, onRefresh, isDarkMode, onToggleTheme }) => {
   return (
     <header className="header">
       <div className="header-content">
@@ -14,6 +14,13 @@ const Header = ({ onAddLead, onRefresh }) => {
         </div>
         
         <div className="header-actions">
+          <button 
+            className="btn btn-theme-toggle"
+            onClick={onToggleTheme}
+            title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isDarkMode ? '☀️' : '🌙'}
+          </button>
           <button 
             className="btn btn-secondary"
             onClick={onRefresh}

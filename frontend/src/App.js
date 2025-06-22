@@ -20,6 +20,24 @@ function App() {
   const [defaultStatus, setDefaultStatus] = useState('Interest');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Theme state for day/night mode
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // Check localStorage for saved theme preference
+    const savedTheme = localStorage.getItem('theme');
+    return savedTheme === 'dark';
+  });
+
+  // Toggle theme function
+  const toggleTheme = () => {
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+  };
+
+  // Apply theme to document root
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
 
   // Fetch leads from Django backend
   const fetchLeads = async () => {
@@ -156,6 +174,8 @@ function App() {
       <Header 
         onAddLead={() => handleAddLead()}
         onRefresh={fetchLeads}
+        isDarkMode={isDarkMode}
+        onToggleTheme={toggleTheme}
       />
       
       {error && (
