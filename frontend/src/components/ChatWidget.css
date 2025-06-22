@@ -84,8 +84,8 @@
   position: absolute;
   bottom: 80px;
   right: 0;
-  width: 350px;
-  height: 500px;
+  width: 320px;
+  height: 400px;
   background: var(--bg-secondary);
   border-radius: 16px;
   box-shadow: 0 10px 40px var(--shadow-medium);
@@ -346,6 +346,13 @@
 }
 
 /* Responsive Design */
+@media (max-width: 768px) {
+  .chat-interface {
+    width: 300px;
+    height: 380px;
+  }
+}
+
 @media (max-width: 480px) {
   .chat-widget {
     bottom: 16px;
@@ -355,13 +362,21 @@
   .chat-interface {
     width: calc(100vw - 32px);
     height: calc(100vh - 120px);
-    max-width: 350px;
-    max-height: 500px;
+    max-width: 300px;
+    max-height: 380px;
   }
   
   .chat-button {
     width: 56px;
     height: 56px;
+  }
+}
+
+/* Large desktop screens - keep it compact */
+@media (min-width: 1200px) {
+  .chat-interface {
+    width: 320px;
+    height: 400px;
   }
 }
 
@@ -386,4 +401,62 @@
 .chat-input textarea:focus {
   outline: 2px solid #667eea;
   outline-offset: 2px;
+}
+
+/* Confirmation Message Styling */
+.confirmation-message .message-content {
+  background: #fff3cd !important;
+  border-left: 4px solid #ffc107;
+  color: #856404 !important;
+}
+
+/* Dark theme support for confirmation messages */
+[data-theme="dark"] .confirmation-message .message-content {
+  background: #664d03 !important;
+  border-left: 4px solid #ffca2c;
+  color: #ffecb5 !important;
+}
+
+.confirmation-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: flex-start;
+}
+
+.confirm-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.confirm-yes {
+  background: #dc3545;
+  color: white;
+}
+
+.confirm-yes:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.confirm-no {
+  background: #6c757d;
+  color: white;
+}
+
+.confirm-no:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.confirm-btn:active {
+  transform: translateY(0);
 } 

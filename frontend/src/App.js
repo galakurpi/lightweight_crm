@@ -58,6 +58,22 @@ function App() {
     }
   };
 
+  // Silent fetch leads for background updates (no loading state)
+  const silentFetchLeads = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/leads/`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setLeads(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error silently fetching leads:', err);
+      // Don't show error for silent updates to avoid disrupting user experience
+    }
+  };
+
   // Add new lead
   const addLead = async (leadData) => {
     try {
@@ -203,7 +219,7 @@ function App() {
         />
       )}
       
-      <ChatWidget />
+      <ChatWidget onLeadsUpdated={silentFetchLeads} />
     </div>
   );
 }

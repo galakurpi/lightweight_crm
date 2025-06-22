@@ -84,6 +84,17 @@ const LeadDetailsModal = ({ lead, onClose, onUpdate }) => {
     setIsEditing(!isEditing);
   };
 
+  // Handle click outside to close edit mode or modal
+  const handleOverlayClick = (e) => {
+    if (e.target.classList.contains('lead-details-overlay')) {
+      if (isEditing) {
+        handleEditToggle(); // First click: exit edit mode and reset form
+      } else {
+        onClose(); // Second click: close the entire modal
+      }
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditData(prev => ({
@@ -225,7 +236,7 @@ const LeadDetailsModal = ({ lead, onClose, onUpdate }) => {
   };
 
   return (
-    <div className="lead-details-overlay">
+    <div className="lead-details-overlay" onClick={handleOverlayClick}>
       <div className="lead-details-container">
         <div className="lead-details-header">
           <div className="lead-details-title">

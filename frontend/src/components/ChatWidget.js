@@ -5,7 +5,7 @@ import './ChatWidget.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-const ChatWidget = () => {
+const ChatWidget = ({ onLeadsUpdated }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
@@ -50,12 +50,44 @@ const ChatWidget = () => {
 
           // Add AI response to messages
           if (data.result && data.result.ai_message) {
+            // Check if this is a deletion confirmation request
+            const isConfirmationRequest = data.result.function_results && 
+              data.result.function_results.some(result => 
+                result.function === 'delete_lead' && 
+                result.result && 
+                result.result.requires_confirmation
+              );
+
+            // Debug logging
+            console.log('AI Response:', data.result);
+            console.log('Function Results:', data.result.function_results);
+            console.log('Is Confirmation Request:', isConfirmationRequest);
+            if (data.result.function_results) {
+              data.result.function_results.forEach((result, index) => {
+                console.log(`Function ${index}:`, result.function, 'Success:', result.result?.success, 'Requires Confirmation:', result.result?.requires_confirmation);
+              });
+            }
+
             setMessages(prev => [...prev, {
               id: Date.now(),
               message: data.result.ai_message,
               isUser: false,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              isConfirmationRequest: isConfirmationRequest,
+              functionResults: data.result.function_results
             }]);
+          }
+
+          // Check if any lead operations were performed and refresh leads
+          if (data.result && data.result.function_results && data.result.function_results.length > 0) {
+            // Check if any of the function results were successful operations that modify data
+            const hasDataModifyingOperations = data.result.function_results.some(result => 
+              result.function !== 'search_leads' && result.result && result.result.success
+            );
+            
+            if (hasDataModifyingOperations && onLeadsUpdated) {
+              onLeadsUpdated();
+            }
           }
         } else if (data.state === 'FAILURE') {
           clearInterval(pollingIntervalRef.current);
@@ -173,6 +205,51 @@ const ChatWidget = () => {
     setIsOpen(!isOpen);
   };
 
+  const handleConfirmAction = (confirmationMessage) => {
+    // Send the confirmation message as if the user typed it
+    const userMessage = {
+      id: Date.now(),
+      message: confirmationMessage,
+      isUser: true,
+      timestamp: new Date().toISOString()
+    };
+
+    // Add user message immediately
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
+
+    // Send to backend
+    fetch(`${API_BASE_URL}/chat/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        message: confirmationMessage
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.task_id) {
+        setCurrentTaskId(data.task_id);
+        pollTaskStatus(data.task_id);
+      } else {
+        throw new Error(data.error || 'Failed to send confirmation');
+      }
+    })
+    .catch(error => {
+      console.error('Error sending confirmation:', error);
+      setIsLoading(false);
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        message: 'Failed to send confirmation. Please try again.',
+        isUser: false,
+        timestamp: new Date().toISOString()
+      }]);
+    });
+  };
+
   return (
     <div className="chat-widget">
       <ChatButton 
@@ -218,6 +295,9 @@ const ChatWidget = () => {
                 message={msg.message}
                 isUser={msg.isUser}
                 timestamp={msg.timestamp}
+                isConfirmationRequest={msg.isConfirmationRequest}
+                functionResults={msg.functionResults}
+                onConfirmAction={handleConfirmAction}
               />
             ))}
             

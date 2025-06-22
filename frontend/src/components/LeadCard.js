@@ -33,7 +33,12 @@ const LeadCard = ({ lead, onDragStart, onDelete, onDoubleClick, statusColor }) =
           className="delete-btn"
           onClick={(e) => {
             e.stopPropagation();
-            onDelete();
+            const confirmDelete = window.confirm(
+              `Are you sure you want to delete "${lead.name || 'this lead'}"?\n\nThis action cannot be undone.`
+            );
+            if (confirmDelete) {
+              onDelete();
+            }
           }}
           title="Delete lead"
         >
