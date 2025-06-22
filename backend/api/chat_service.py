@@ -386,7 +386,7 @@ class ChatService:
         matches.sort(key=lambda x: x[1], reverse=True)
         return [match[0] for match in matches]
     
-    def execute_function_call(self, function_name: str, arguments: Dict, leads: List[Dict], session_key: str = None) -> Dict:
+    def execute_function_call(self, function_name: str, arguments: Dict, leads: List[Dict], session_key: str = None, user_id: str = None) -> Dict:
         """
         Execute OpenAI function calls for lead operations.
         
@@ -424,7 +424,7 @@ class ChatService:
                 updated_lead = SupabaseService.update_lead(lead_id, {
                     'status': new_status,
                     'card_order': new_order
-                })
+                }, user_id=user_id)
                 
                 if updated_lead:
                     return {
@@ -453,7 +453,7 @@ class ChatService:
                         }
                     value = parsed_value
                 
-                updated_lead = SupabaseService.update_lead(lead_id, {field: value})
+                updated_lead = SupabaseService.update_lead(lead_id, {field: value}, user_id=user_id)
                 
                 if updated_lead:
                     return {
@@ -486,7 +486,7 @@ class ChatService:
                 same_status_leads = [l for l in leads if l.get('status') == arguments['status']]
                 arguments['card_order'] = len(same_status_leads) + 1
                 
-                new_lead = SupabaseService.create_lead(arguments)
+                new_lead = SupabaseService.create_lead(arguments, user_id=user_id)
                 
                 if new_lead:
                     return {
@@ -552,7 +552,7 @@ class ChatService:
                 lead_data = pending_deletions[lead_id]
                 
                 # Actually delete the lead
-                success = SupabaseService.delete_lead(lead_id)
+                success = SupabaseService.delete_lead(lead_id, user_id=user_id)
                 
                 if success:
                     # Remove from pending deletions
@@ -579,7 +579,7 @@ class ChatService:
                 "message": f"Error executing {function_name}: {str(e)}"
             }
     
-    def process_message(self, message: str, session_key: str, leads: List[Dict]) -> Dict:
+    def process_message(self, message: str, session_key: str, leads: List[Dict], conversation_id: str = None, user_id: str = None) -> Dict:
         """
         Process user message with OpenAI and execute any required functions.
         
@@ -660,7 +660,7 @@ Be formal but brief in responses. When referencing leads from conversation conte
                 function_args = json.loads(response_message.function_call.arguments)
                 
                 # Execute the function
-                result = self.execute_function_call(function_name, function_args, leads, session_key)
+                result = self.execute_function_call(function_name, function_args, leads, session_key, user_id)
                 function_results.append({
                     "function": function_name,
                     "arguments": function_args,
@@ -688,6 +688,15 @@ Be formal but brief in responses. When referencing leads from conversation conte
             # Update conversation context
             self.update_conversation_context(session_key, {"role": "user", "content": message})
             self.update_conversation_context(session_key, {"role": "assistant", "content": ai_message})
+            
+            # Save AI response to database if conversation_id is provided
+            if conversation_id:
+                SupabaseService.create_message(
+                    conversation_id, 
+                    ai_message, 
+                    is_user=False, 
+                    function_results=function_results
+                )
             
             return {
                 "ai_message": ai_message,

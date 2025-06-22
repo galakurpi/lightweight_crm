@@ -4,11 +4,14 @@ import KanbanBoard from './components/KanbanBoard';
 import LeadForm from './components/LeadForm';
 import Header from './components/Header';
 import ChatWidget from './components/ChatWidget';
+import Login from './components/Login';
+import { AuthProvider, useAuth } from './components/AuthContext';
 
 // Base API URL for the Django backend
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-function App() {
+// Main app component with authentication
+const MainApp = () => {
   const [leads, setLeads] = useState({
     'Interest': [],
     'Meeting booked': [],
@@ -43,7 +46,10 @@ function App() {
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/leads/`);
+      const response = await fetch(`${API_BASE_URL}/leads/`, {
+        method: 'GET',
+        credentials: 'include',
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -61,7 +67,10 @@ function App() {
   // Silent fetch leads for background updates (no loading state)
   const silentFetchLeads = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/leads/`);
+      const response = await fetch(`${API_BASE_URL}/leads/`, {
+        method: 'GET',
+        credentials: 'include',
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -82,6 +91,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(leadData),
       });
       
@@ -112,6 +122,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           status: newStatus,
           card_order: newOrder
@@ -138,6 +149,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(leadData),
       });
       
@@ -159,6 +171,7 @@ function App() {
     try {
       const response = await fetch(`${API_BASE_URL}/leads/${leadId}/`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       
       if (!response.ok) {
@@ -222,6 +235,34 @@ function App() {
       <ChatWidget onLeadsUpdated={silentFetchLeads} />
     </div>
   );
+};
+
+// App component with authentication wrapper
+function App() {
+  return (
+    <AuthProvider>
+      <AppWithAuth />
+    </AuthProvider>
+  );
 }
+
+// Component that handles authentication state
+const AppWithAuth = () => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="App">
+        <div className="loading">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Login />;
+  }
+
+  return <MainApp />;
+};
 
 export default App;

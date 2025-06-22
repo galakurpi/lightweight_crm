@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ChatButton from './ChatButton';
 import ChatMessage from './ChatMessage';
+import ConversationList from './ConversationList';
 import './ChatWidget.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
@@ -12,6 +13,9 @@ const ChatWidget = ({ onLeadsUpdated }) => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState(null);
+  const [currentConversationId, setCurrentConversationId] = useState(null);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [conversationRefresh, setConversationRefresh] = useState(0);
   const messagesEndRef = useRef(null);
   const pollingIntervalRef = useRef(null);
 
@@ -144,13 +148,21 @@ const ChatWidget = ({ onLeadsUpdated }) => {
         },
         credentials: 'include', // Include session cookies
         body: JSON.stringify({
-          message: userMessage.message
+          message: userMessage.message,
+          conversation_id: currentConversationId
         })
       });
 
       const data = await response.json();
 
       if (response.ok && data.task_id) {
+        // Update conversation ID if returned
+        if (data.conversation_id && data.conversation_id !== currentConversationId) {
+          setCurrentConversationId(data.conversation_id);
+          // Trigger conversation list refresh
+          setConversationRefresh(prev => prev + 1);
+        }
+        
         setCurrentTaskId(data.task_id);
         // Start polling for task completion
         pollTaskStatus(data.task_id);
@@ -169,6 +181,65 @@ const ChatWidget = ({ onLeadsUpdated }) => {
         timestamp: new Date().toISOString()
       }]);
     }
+  };
+
+  // Load messages for a specific conversation
+  const loadConversationMessages = async (conversationId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/conversations/${conversationId}/messages/`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const messages = await response.json();
+        // Transform backend messages to frontend format
+        const formattedMessages = messages.map(msg => ({
+          id: msg.id,
+          message: msg.content,
+          isUser: msg.role === 'user',
+          timestamp: msg.created_at,
+          isConfirmationRequest: false,
+          functionResults: msg.function_results ? JSON.parse(msg.function_results) : null
+        }));
+        setMessages(formattedMessages);
+      } else {
+        console.error('Failed to load conversation messages');
+      }
+    } catch (error) {
+      console.error('Error loading conversation messages:', error);
+    }
+  };
+
+  // Handle conversation selection
+  const handleSelectConversation = (conversationId) => {
+    if (conversationId === currentConversationId) return;
+    
+    setCurrentConversationId(conversationId);
+    if (conversationId) {
+      loadConversationMessages(conversationId);
+    } else {
+      setMessages([]);
+    }
+    
+    // Stop any ongoing polling when switching conversations
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+    setIsLoading(false);
+    setCurrentTaskId(null);
+  };
+
+  // Handle new conversation
+  const handleNewConversation = () => {
+    setCurrentConversationId(null);
+    setMessages([]);
+    // Stop any ongoing polling
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+    setIsLoading(false);
+    setCurrentTaskId(null);
   };
 
   const clearConversation = async () => {
@@ -234,7 +305,8 @@ const ChatWidget = ({ onLeadsUpdated }) => {
       },
       credentials: 'include',
       body: JSON.stringify({
-        message: confirmationMessage
+        message: confirmationMessage,
+        conversation_id: currentConversationId
       })
     })
     .then(response => response.json())
@@ -279,10 +351,22 @@ const ChatWidget = ({ onLeadsUpdated }) => {
       )}
       
       {isOpen && !isCollapsed && (
-        <div className="chat-interface">
+        <div className={`chat-interface ${showSidebar ? 'with-sidebar' : ''}`}>
           <div className="chat-header">
             <h3>CRM Assistant</h3>
             <div className="header-controls">
+              <button 
+                className="sidebar-toggle-button"
+                onClick={() => setShowSidebar(!showSidebar)}
+                title={showSidebar ? "Hide conversations" : "Show conversations"}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="9" y1="9" x2="15" y2="9"></line>
+                  <line x1="9" y1="12" x2="15" y2="12"></line>
+                  <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+              </button>
               <button 
                 className="minimize-button"
                 onClick={toggleCollapse}
@@ -305,59 +389,74 @@ const ChatWidget = ({ onLeadsUpdated }) => {
             </div>
           </div>
           
-          <div className="chat-messages">
-            {messages.length === 0 && (
-              <div className="welcome-message">
-                <p>Hello! I'm your CRM assistant. I can help you:</p>
-                <ul>
-                  <li>Update lead statuses</li>
-                  <li>Modify lead information</li>
-                  <li>Create new leads</li>
-                  <li>Search for leads</li>
-                  <li>Delete leads</li>
-                </ul>
-                <p>Just tell me what you'd like to do!</p>
+          <div className="chat-content">
+            {showSidebar && (
+              <div className="chat-sidebar">
+                <ConversationList
+                  selectedConversationId={currentConversationId}
+                  onSelectConversation={handleSelectConversation}
+                  onNewConversation={handleNewConversation}
+                  refreshTrigger={conversationRefresh}
+                />
               </div>
             )}
             
-            {messages.map((msg) => (
-              <ChatMessage
-                key={msg.id}
-                message={msg.message}
-                isUser={msg.isUser}
-                timestamp={msg.timestamp}
-                isConfirmationRequest={msg.isConfirmationRequest}
-                functionResults={msg.functionResults}
-                onConfirmAction={handleConfirmAction}
-              />
-            ))}
-            
-            {isLoading && (
-              <ChatMessage isLoading={true} />
-            )}
-            
-            <div ref={messagesEndRef} />
-          </div>
-          
-          <div className="chat-input">
-            <textarea
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type your message..."
-              disabled={isLoading}
-              rows={1}
-            />
-            <button 
-              onClick={sendMessage}
-              disabled={!inputValue.trim() || isLoading}
-              className="send-button"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="22" y1="2" x2="11" y2="13"></line>
-                <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
-              </svg>
-            </button>
+            <div className="chat-main">
+              <div className="chat-messages">
+                {messages.length === 0 && (
+                  <div className="welcome-message">
+                    <p>Hello! I'm your CRM assistant. I can help you:</p>
+                    <ul>
+                      <li>Update lead statuses</li>
+                      <li>Modify lead information</li>
+                      <li>Create new leads</li>
+                      <li>Search for leads</li>
+                      <li>Delete leads</li>
+                    </ul>
+                    <p>Just tell me what you'd like to do!</p>
+                  </div>
+                )}
+                
+                {messages.map((msg) => (
+                  <ChatMessage
+                    key={msg.id}
+                    message={msg.message}
+                    isUser={msg.isUser}
+                    timestamp={msg.timestamp}
+                    isConfirmationRequest={msg.isConfirmationRequest}
+                    functionResults={msg.functionResults}
+                    onConfirmAction={handleConfirmAction}
+                  />
+                ))}
+                
+                {isLoading && (
+                  <ChatMessage isLoading={true} />
+                )}
+                
+                <div ref={messagesEndRef} />
+              </div>
+              
+              <div className="chat-input">
+                <textarea
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your message..."
+                  disabled={isLoading}
+                  rows={1}
+                />
+                <button 
+                  onClick={sendMessage}
+                  disabled={!inputValue.trim() || isLoading}
+                  className="send-button"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

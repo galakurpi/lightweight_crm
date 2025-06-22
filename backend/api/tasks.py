@@ -9,14 +9,15 @@ from .chat_service import ChatService
 openai.api_key = settings.OPENAI_API_KEY
 
 @shared_task(bind=True)
-def process_chat_message(self, message, session_key, conversation_context=None):
+def process_chat_message(self, message, session_key, conversation_id=None, user_id=None):
     """
     Background task to process chat messages with OpenAI
     
     Args:
         message (str): User's chat message
         session_key (str): Django session key for context storage
-        conversation_context (list): Previous conversation context
+        conversation_id (str): ID of the conversation for message persistence
+        user_id (str): ID of the user for lead filtering
     
     Returns:
         dict: Response containing AI message and any lead operations performed
@@ -25,14 +26,20 @@ def process_chat_message(self, message, session_key, conversation_context=None):
         # Update task status
         self.update_state(state='PROCESSING', meta={'status': 'Processing your message...'})
         
-        # Get current leads for context
-        leads = SupabaseService.get_all_leads()
+        # Get current leads for context (filtered by user)
+        leads = SupabaseService.get_all_leads(user_id=user_id)
         
         # Initialize chat service
         chat_service = ChatService()
         
         # Process the message with OpenAI
-        response = chat_service.process_message(message, session_key, leads)
+        response = chat_service.process_message(
+            message, 
+            session_key, 
+            leads, 
+            conversation_id=conversation_id, 
+            user_id=user_id
+        )
         
         return response
         

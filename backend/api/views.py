@@ -1,4 +1,7 @@
 from django.shortcuts import render
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.hashers import check_password
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -18,15 +21,126 @@ def test_api(request):
 
 # Create your views here.
 
+# Authentication endpoints
+@api_view(['POST'])
+def login_view(request):
+    """User login with email and password"""
+    try:
+        email = request.data.get('email')
+        password = request.data.get('password')
+        
+        if not email or not password:
+            return Response(
+                {'error': 'Email and password are required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get user from Supabase
+        user_data = SupabaseService.get_user_by_email(email)
+        if not user_data:
+            return Response(
+                {'error': 'Invalid credentials'}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # Check password
+        if check_password(password, user_data['password_hash']):
+            # Store user info in session
+            request.session['user_id'] = user_data['id']
+            request.session['user_email'] = user_data['email']
+            request.session['is_admin'] = user_data.get('is_admin', False)
+            
+            return Response({
+                'success': True,
+                'user': {
+                    'id': user_data['id'],
+                    'email': user_data['email'],
+                    'first_name': user_data.get('first_name', ''),
+                    'last_name': user_data.get('last_name', ''),
+                    'is_admin': user_data.get('is_admin', False)
+                }
+            })
+        else:
+            return Response(
+                {'error': 'Invalid credentials'}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+            
+    except Exception as e:
+        return Response(
+            {'error': 'Login failed', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['POST'])
+def logout_view(request):
+    """User logout"""
+    try:
+        request.session.flush()
+        return Response({'success': True, 'message': 'Logged out successfully'})
+    except Exception as e:
+        return Response(
+            {'error': 'Logout failed', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+def current_user(request):
+    """Get current user info"""
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return Response(
+            {'error': 'Not authenticated'}, 
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    try:
+        user_data = SupabaseService.get_user_by_id(user_id)
+        if user_data:
+            return Response({
+                'user': {
+                    'id': user_data['id'],
+                    'email': user_data['email'],
+                    'first_name': user_data.get('first_name', ''),
+                    'last_name': user_data.get('last_name', ''),
+                    'is_admin': user_data.get('is_admin', False)
+                }
+            })
+        else:
+            return Response(
+                {'error': 'User not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+    except Exception as e:
+        return Response(
+            {'error': 'Failed to get user info', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+def require_authentication(view_func):
+    """Decorator to require authentication for views"""
+    def wrapper(request, *args, **kwargs):
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return Response(
+                {'error': 'Authentication required'}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
 @api_view(['GET', 'POST'])
+@require_authentication
 def leads_list(request):
     """
-    List all leads or create a new lead
+    List all leads or create a new lead (user-specific)
     GET: Returns all leads grouped by status for Kanban board
     POST: Creates a new lead
     """
+    user_id = request.session.get('user_id')
+    
     if request.method == 'GET':
-        leads = SupabaseService.get_all_leads()
+        leads = SupabaseService.get_all_leads(user_id=user_id)
         
         # Group leads by status for Kanban board
         kanban_data = {
@@ -52,11 +166,11 @@ def leads_list(request):
             lead_data['status'] = 'Interest'
         
         # Set card order to be last in the column
-        leads = SupabaseService.get_all_leads()
+        leads = SupabaseService.get_all_leads(user_id=user_id)
         same_status_leads = [l for l in leads if l.get('status') == lead_data['status']]
         lead_data['card_order'] = len(same_status_leads) + 1
         
-        new_lead = SupabaseService.create_lead(lead_data)
+        new_lead = SupabaseService.create_lead(lead_data, user_id=user_id)
         
         if new_lead:
             return Response(new_lead, status=status.HTTP_201_CREATED)
@@ -67,12 +181,15 @@ def leads_list(request):
             )
 
 @api_view(['GET', 'PUT', 'DELETE'])
+@require_authentication
 def lead_detail(request, lead_id):
     """
-    Retrieve, update or delete a specific lead
+    Retrieve, update or delete a specific lead (user-specific)
     """
+    user_id = request.session.get('user_id')
+    
     if request.method == 'GET':
-        lead = SupabaseService.get_lead_by_id(lead_id)
+        lead = SupabaseService.get_lead_by_id(lead_id, user_id=user_id)
         if lead:
             return Response(lead)
         return Response(
@@ -82,7 +199,7 @@ def lead_detail(request, lead_id):
     
     elif request.method == 'PUT':
         lead_data = request.data
-        updated_lead = SupabaseService.update_lead(lead_id, lead_data)
+        updated_lead = SupabaseService.update_lead(lead_id, lead_data, user_id=user_id)
         
         if updated_lead:
             return Response(updated_lead)
@@ -92,7 +209,7 @@ def lead_detail(request, lead_id):
         )
     
     elif request.method == 'DELETE':
-        success = SupabaseService.delete_lead(lead_id)
+        success = SupabaseService.delete_lead(lead_id, user_id=user_id)
         if success:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(
@@ -101,10 +218,12 @@ def lead_detail(request, lead_id):
         )
 
 @api_view(['PUT'])
+@require_authentication
 def update_lead_status(request, lead_id):
     """
-    Update lead status (for moving cards between Kanban columns)
+    Update lead status (for moving cards between Kanban columns) - user-specific
     """
+    user_id = request.session.get('user_id')
     new_status = request.data.get('status')
     new_order = request.data.get('card_order', 1)
     
@@ -120,7 +239,7 @@ def update_lead_status(request, lead_id):
         'card_order': new_order
     }
     
-    updated_lead = SupabaseService.update_lead(lead_id, lead_data)
+    updated_lead = SupabaseService.update_lead(lead_id, lead_data, user_id=user_id)
     
     if updated_lead:
         return Response(updated_lead)
@@ -129,29 +248,175 @@ def update_lead_status(request, lead_id):
         status=status.HTTP_400_BAD_REQUEST
     )
 
+# Conversation endpoints
+@api_view(['GET'])
+@require_authentication
+def conversations_list(request):
+    """Get all conversations for the current user"""
+    user_id = request.session.get('user_id')
+    
+    try:
+        conversations = SupabaseService.get_user_conversations(user_id)
+        return Response(conversations)
+    except Exception as e:
+        return Response(
+            {'error': 'Failed to fetch conversations', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
 @api_view(['POST'])
+@require_authentication
+def create_conversation(request):
+    """Create a new conversation"""
+    user_id = request.session.get('user_id')
+    title = request.data.get('title', 'New Conversation')
+    
+    try:
+        conversation = SupabaseService.create_conversation(user_id, title)
+        if conversation:
+            return Response(conversation, status=status.HTTP_201_CREATED)
+        else:
+            return Response(
+                {'error': 'Failed to create conversation'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    except Exception as e:
+        return Response(
+            {'error': 'Failed to create conversation', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@require_authentication
+def conversation_detail(request, conversation_id):
+    """Get, update, or delete a specific conversation"""
+    user_id = request.session.get('user_id')
+    
+    if request.method == 'GET':
+        try:
+            conversation = SupabaseService.get_conversation_by_id(conversation_id, user_id)
+            if conversation:
+                return Response(conversation)
+            else:
+                return Response(
+                    {'error': 'Conversation not found'}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        except Exception as e:
+            return Response(
+                {'error': 'Failed to fetch conversation', 'details': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    elif request.method == 'PUT':
+        try:
+            conversation_data = request.data
+            updated_conversation = SupabaseService.update_conversation(
+                conversation_id, conversation_data, user_id
+            )
+            if updated_conversation:
+                return Response(updated_conversation)
+            else:
+                return Response(
+                    {'error': 'Failed to update conversation'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except Exception as e:
+            return Response(
+                {'error': 'Failed to update conversation', 'details': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    elif request.method == 'DELETE':
+        try:
+            success = SupabaseService.delete_conversation(conversation_id, user_id)
+            if success:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response(
+                    {'error': 'Failed to delete conversation'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except Exception as e:
+            return Response(
+                {'error': 'Failed to delete conversation', 'details': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+@api_view(['GET'])
+@require_authentication
+def conversation_messages(request, conversation_id):
+    """Get all messages for a specific conversation"""
+    user_id = request.session.get('user_id')
+    
+    try:
+        # First verify user owns this conversation
+        conversation = SupabaseService.get_conversation_by_id(conversation_id, user_id)
+        if not conversation:
+            return Response(
+                {'error': 'Conversation not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        messages = SupabaseService.get_conversation_messages(conversation_id)
+        return Response(messages)
+    except Exception as e:
+        return Response(
+            {'error': 'Failed to fetch messages', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['POST'])
+@require_authentication
 def chat_message(request):
     """
     Initiate async chat message processing, returns task_id
     """
+    user_id = request.session.get('user_id')
+    
     try:
         message = request.data.get('message')
+        conversation_id = request.data.get('conversation_id')
+        
         if not message:
             return Response(
                 {'error': 'Message is required'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # If no conversation_id provided, create a new conversation
+        if not conversation_id:
+            title = SupabaseService.generate_conversation_title(message)
+            conversation = SupabaseService.create_conversation(user_id, title)
+            if not conversation:
+                return Response(
+                    {'error': 'Failed to create conversation'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            conversation_id = conversation['id']
+        else:
+            # Verify user owns this conversation
+            conversation = SupabaseService.get_conversation_by_id(conversation_id, user_id)
+            if not conversation:
+                return Response(
+                    {'error': 'Conversation not found'}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        
+        # Save user message to database
+        SupabaseService.create_message(conversation_id, message, is_user=True)
+        
         # Get or create session
         if not request.session.session_key:
             request.session.create()
         session_key = request.session.session_key
         
-        # Initiate async task
-        task = process_chat_message.delay(message, session_key)
+        # Initiate async task with conversation_id and user_id
+        task = process_chat_message.delay(message, session_key, conversation_id, user_id)
         
         return Response({
             'task_id': task.id,
+            'conversation_id': conversation_id,
             'status': 'processing',
             'message': 'Message received, processing...'
         })
@@ -206,9 +471,10 @@ def chat_status(request, task_id):
         )
 
 @api_view(['POST'])
+@require_authentication
 def clear_chat(request):
     """
-    Clear conversation context from session
+    Clear conversation context from session (legacy support)
     """
     try:
         # Get or create session
