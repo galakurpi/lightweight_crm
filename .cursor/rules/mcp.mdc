@@ -1,0 +1,20 @@
+---
+description: This rule says what to do when the word "mcp" is at the user's prompt. And how to use MCP servers
+globs: 
+alwaysApply: false
+---
+---
+description: What to do when the word "mcp" is at the user's prompt.
+globs: 
+alwaysApply: false
+---
+ # INSTRUCTIONS FOR MCP SERVERS
+Every time the prompt has the word "mcp" in it, you will have to use an MCP Server.
+
+## AVAILABLE MCP SERVERS
+The MCP Servers available are the following:
+browser_tools (for frontend debugging)
+    Use browser_tools MCP only at the beginning of the work, ONLY before making changes.
+
+
+When the prompt has "mcp", think well which tool of which server to use, and use it/them to achieve the goal set by the user.

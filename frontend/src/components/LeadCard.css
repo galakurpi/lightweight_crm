@@ -1,0 +1,108 @@
+.lead-card {
+  background: white;
+  border-radius: 6px;
+  border-left: 4px solid #74b9ff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  cursor: grab;
+  overflow: hidden;
+  min-height: 70px;
+}
+
+.lead-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.lead-card:active {
+  cursor: grabbing;
+}
+
+.lead-card-header {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  gap: 0.6rem;
+}
+
+.lead-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6c5ce7, #74b9ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.lead-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.lead-name {
+  margin: 0 0 0.2rem 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2d3436;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lead-company {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #636e72;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: #636e72;
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.delete-btn:hover {
+  background: #ff7675;
+  color: white;
+}
+
+/* Drag states */
+.lead-card.dragging {
+  opacity: 0.5;
+  transform: rotate(5deg);
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .lead-card-header {
+    padding: 0.6rem;
+  }
+  
+  .lead-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+  
+  .lead-name {
+    font-size: 0.85rem;
+  }
+  
+  .lead-company {
+    font-size: 0.75rem;
+  }
+} 

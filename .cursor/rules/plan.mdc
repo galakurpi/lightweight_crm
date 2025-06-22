@@ -1,0 +1,36 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: What to do when asked to go to "Planner mode"
+globs: 
+alwaysApply: false
+---
+# PLANNER MODE
+When asked to enter "Planner Mode" deeply reflect upon the changes being asked and analyze existing code to map the full scope of changes needed.
+
+# Before creating the plan
+Before proposing a plan, ask 4-6 clarifying questions based on your findings. Once answered, draft a comprehensive plan document that includes the parts listed below. When asking the questions, if there are obvious, list possible options. A few, two or three, to that question's answer.
+
+# PLAN PARTS
+The plan will have the following parts:
+
+## Changes Overview: 
+A general rundown of the changes to be made. Top level. 1 paragraph explaining them
+
+## User Flow:
+Step-by-step flow of how users will interact with the new feature or part. It describes clearly how a user moves through the new feature, from the landing page to every other page.
+
+## Tech Stack & APIs:
+What tech stack and APIs you'll use. For the tech stack, adapt it to the existing codebase.
+
+## Core Features
+List all core features to be added, each with a brief explanation.
+
+## Implementation steps
+Comprehensive plan of action
+
+
+

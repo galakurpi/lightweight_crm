@@ -1,0 +1,20 @@
+---
+description: How to make changes to frontend files.
+globs: *.ts,*.js,*.svelte,*.css
+alwaysApply: false
+---
+---
+description: Custom AI behavior for frontend files, enforcing UI patterns and framework preferences.
+globs: 
+  - /frontend/**/*
+alwaysApply: false
+---
+
+# FRONTEND RULES
+Put each element in a new Svelte component in a new file. Keep the files organized.
+Prioritize code quality: small, reusable components; no duplication. Create new components if needed.
+Maintain clean UI: consistent naming (e.g., `Button`, `Card`) and minimal props.
+Use "browser_tools" MCP server ONLY BEFORE changing the code.
+ONLY focus on the changes requested, nothing else.
+DO NOT add comments in the html code parts
+Do not execute any command to update frontend, nor any "npm" command.
