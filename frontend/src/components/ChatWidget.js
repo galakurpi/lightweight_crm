@@ -12,7 +12,7 @@ const ChatWidget = ({ onLeadsUpdated }) => {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [currentTaskId, setCurrentTaskId] = useState(null);
+
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
   const [conversationRefresh, setConversationRefresh] = useState(0);
@@ -51,7 +51,6 @@ const ChatWidget = ({ onLeadsUpdated }) => {
         if (data.state === 'SUCCESS') {
           clearInterval(pollingIntervalRef.current);
           setIsLoading(false);
-          setCurrentTaskId(null);
 
           // Add AI response to messages
           if (data.result && data.result.ai_message) {
@@ -97,7 +96,6 @@ const ChatWidget = ({ onLeadsUpdated }) => {
         } else if (data.state === 'FAILURE') {
           clearInterval(pollingIntervalRef.current);
           setIsLoading(false);
-          setCurrentTaskId(null);
 
           // Add error message
           setMessages(prev => [...prev, {
@@ -112,7 +110,6 @@ const ChatWidget = ({ onLeadsUpdated }) => {
         console.error('Error polling task status:', error);
         clearInterval(pollingIntervalRef.current);
         setIsLoading(false);
-        setCurrentTaskId(null);
 
         setMessages(prev => [...prev, {
           id: Date.now(),
@@ -170,7 +167,6 @@ const ChatWidget = ({ onLeadsUpdated }) => {
           setConversationRefresh(prev => prev + 1);
         }
         
-        setCurrentTaskId(data.task_id);
         // Start polling for task completion
         pollTaskStatus(data.task_id);
       } else {
@@ -234,7 +230,6 @@ const ChatWidget = ({ onLeadsUpdated }) => {
       clearInterval(pollingIntervalRef.current);
     }
     setIsLoading(false);
-    setCurrentTaskId(null);
   };
 
   // Handle new conversation - create empty conversation like ChatGPT
@@ -264,7 +259,6 @@ const ChatWidget = ({ onLeadsUpdated }) => {
           clearInterval(pollingIntervalRef.current);
         }
         setIsLoading(false);
-        setCurrentTaskId(null);
         
         // Refresh conversation list to show the new conversation
         setConversationRefresh(prev => prev + 1);
@@ -277,7 +271,6 @@ const ChatWidget = ({ onLeadsUpdated }) => {
           clearInterval(pollingIntervalRef.current);
         }
         setIsLoading(false);
-        setCurrentTaskId(null);
       }
     } catch (error) {
       console.error('Error creating new conversation:', error);
@@ -288,7 +281,6 @@ const ChatWidget = ({ onLeadsUpdated }) => {
         clearInterval(pollingIntervalRef.current);
       }
       setIsLoading(false);
-      setCurrentTaskId(null);
     }
   };
 
@@ -309,7 +301,6 @@ const ChatWidget = ({ onLeadsUpdated }) => {
           clearInterval(pollingIntervalRef.current);
         }
         setIsLoading(false);
-        setCurrentTaskId(null);
       }
     } catch (error) {
       console.error('Error clearing conversation:', error);
@@ -362,7 +353,6 @@ const ChatWidget = ({ onLeadsUpdated }) => {
     .then(response => response.json())
     .then(data => {
       if (data.task_id) {
-        setCurrentTaskId(data.task_id);
         pollTaskStatus(data.task_id);
       } else {
         throw new Error(data.error || 'Failed to send confirmation');
