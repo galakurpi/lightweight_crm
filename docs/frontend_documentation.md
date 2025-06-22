@@ -391,7 +391,7 @@ Creates optimized production build in `build/` directory.
 - **Naming**: Consistent component and function naming
 - **Comments**: Document complex logic and business rules
 
-### Pull Request Process
+### Pull Request Process 
 1. Feature branch from main
 2. Component and integration tests
 3. Update documentation if needed
