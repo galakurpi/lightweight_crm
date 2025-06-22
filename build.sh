@@ -2,8 +2,7 @@
 # Install Python dependencies
 pip install -r requirements.txt
 
-# Navigate to backend directory and collect static files
-cd backend
+# Collect static files (manage.py is in root directory)
 python manage.py collectstatic --noinput
 
 echo "Build completed successfully!" 
