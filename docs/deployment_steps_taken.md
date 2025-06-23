@@ -106,6 +106,90 @@ CSRF_TRUSTED_ORIGINS = [
 **Git Commit**: `40ee837` - "Trigger Railway redeploy: Update CORS regex comment for new Vercel URL"
 **Result**: 🔄 Railway redeploying with regex pattern that should match all lightweight-*.vercel.app URLs
 
+### 10. Django Backend Startup Failure After CORS Fix
+**Error**: `python: can't open file '/app/backend/manage.py': [Errno 2] No such file or directory`
+**Cause**: Procfile was trying to run `cd backend && python manage.py` but `manage.py` is in root directory
+**Fix**: Updated Procfile to correct path:
+```
+web: python manage.py migrate && gunicorn backend.wsgi:application --bind 0.0.0.0:$PORT
+```
+**Result**: ✅ Railway backend started successfully, CORS issues resolved
+
+### 11. Chat Status Polling 401 Unauthorized Errors
+**Error**: `GET /chat/status/{task_id}/ 401 (Unauthorized)` during chat message polling
+**Cause**: Chat status polling requests missing `credentials: 'include'` header for session cookies
+**Fix**: Added credentials to polling fetch in `frontend/src/components/ChatWidget.js`:
+```javascript
+const response = await fetch(`${API_BASE_URL}/chat/status/${taskId}/`, {
+  credentials: 'include', // Include session cookies for authentication
+});
+```
+**Result**: ✅ Chat status polling now includes session cookies, no more 401 errors
+
+### 12. Manifest.json 401 Errors on Vercel
+**Error**: `Failed to load resource: the server responded with a status of 401 ()` for `/manifest.json`
+**Cause**: Vercel routing configuration causing static files to get authentication headers
+**Fix**: Added explicit routes for static files in `vercel.json`:
+```json
+"routes": [
+  {
+    "src": "/manifest.json",
+    "dest": "/frontend/manifest.json",
+    "headers": {
+      "Cache-Control": "public, max-age=86400"
+    }
+  },
+  {
+    "src": "/favicon.ico",
+    "dest": "/frontend/favicon.ico"
+  },
+  {
+    "src": "/logo(.*).png",
+    "dest": "/frontend/logo$1.png"
+  }
+]
+```
+**Result**: ✅ Static files served properly without authentication headers
+
+### 13. Celery Workers Being Killed by Railway Memory Limits
+**Error**: `Worker (pid:X) was sent SIGKILL! Perhaps out of memory?` - Chat tasks stuck in PENDING state forever
+**Cause**: Railway containers have limited memory, running both Django and Celery workers exceeded limits
+**Fix**: Implemented threading fallback approach:
+1. Skip Celery entirely to avoid memory issues
+2. Use Python threading for background chat processing
+3. Store results in Django cache instead of Redis/Celery backend
+4. Updated chat status endpoint to check cache first
+
+```python
+# Force threading fallback since Celery workers keep getting killed
+print(f"🔄 Skipping Celery (workers killed by Railway) - using threading...")
+
+# Threading approach when Celery workers are killed by memory limits
+import threading
+import uuid
+from django.core.cache import cache
+
+# Generate a task ID for polling
+task_id = str(uuid.uuid4())
+
+# Set initial status
+cache.set(f"task_{task_id}", {'state': 'PROCESSING', 'status': 'Processing your message...'}, 300)
+
+def process_in_thread():
+    # Process chat message in background thread
+    # Store results in cache when complete
+
+thread = threading.Thread(target=process_in_thread)
+thread.daemon = True
+thread.start()
+```
+
+Updated Procfile for better memory usage:
+```
+web: python manage.py migrate && gunicorn backend.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --threads 2
+```
+**Result**: ✅ Chat processing works reliably without memory issues, no more infinite polling
+
 ## Admin Login Credentials
 - **Email**: `admin@crm.local`
 - **Password**: `admin123`
@@ -116,11 +200,13 @@ CSRF_TRUSTED_ORIGINS = [
 - **URL**: `https://lightweightcrm-production.up.railway.app`
 - **Status**: ✅ Working
 - **Test Endpoint**: `/test/` returns `{"message":"Django API is working!","status":"success"}`
+- **Chat Processing**: Threading-based (Celery disabled due to memory constraints)
 
 ### Vercel Frontend  
 - **URL**: `https://lightweight-d6519wrjz-jons-projects-f84a4607.vercel.app`
 - **Status**: ✅ Connected to backend
 - **Environment Variable**: `REACT_APP_API_URL` pointing to Railway
+- **Static Files**: Properly routed and cached
 
 ## Required Environment Variables
 
@@ -138,3 +224,12 @@ CORS_ALLOW_ALL_ORIGINS=False
 ```
 REACT_APP_API_URL=https://lightweightcrm-production.up.railway.app
 ```
+
+## Key Lessons Learned
+
+1. **CORS with Credentials**: When using `credentials: 'include'`, cannot use wildcard `*` for CORS origins
+2. **Railway Memory Limits**: Free tier has strict memory limits that kill Celery workers - threading is more reliable
+3. **Vercel Dynamic URLs**: Use regex patterns for CORS to handle dynamic preview deployment URLs
+4. **Session Cookies Cross-Origin**: Requires `SameSite=None` and `Secure=True` for HTTPS
+5. **Static File Routing**: Explicit Vercel routes prevent authentication headers on static assets
+6. **Railway File Paths**: Always verify file locations match Procfile commands
