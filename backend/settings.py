@@ -147,7 +147,7 @@ CORS_ALLOWED_ORIGINS = [
 
 # Allow all Vercel preview deployments using regex pattern
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https://lightweight-.*\.vercel\.app$",  # Any Vercel deployment for this project
+    r"^https://lightweight-.*\.vercel\.app$",  # Matches: lightweight-qgudsb820-jons-projects-f84a4607.vercel.app
 ]
 
 # Allow all origins during development (will be restricted in production)
