@@ -52,6 +52,11 @@ def login_view(request):
             request.session['user_email'] = user_data['email']
             request.session['is_admin'] = user_data.get('is_admin', False)
             
+            # Debug: Log session creation
+            print(f"✅ Login successful for {email}")
+            print(f"Session ID: {request.session.session_key}")
+            print(f"User ID stored in session: {request.session['user_id']}")
+            
             return Response({
                 'success': True,
                 'user': {
@@ -123,11 +128,21 @@ def require_authentication(view_func):
     """Decorator to require authentication for views"""
     def wrapper(request, *args, **kwargs):
         user_id = request.session.get('user_id')
+        
+        # Debug: Log session checking
+        print(f"🔍 Checking auth for {request.path}")
+        print(f"Session key: {request.session.session_key}")
+        print(f"User ID in session: {user_id}")
+        print(f"Session data: {dict(request.session)}")
+        
         if not user_id:
+            print("❌ No user_id in session - returning 401")
             return Response(
                 {'error': 'Authentication required'}, 
                 status=status.HTTP_401_UNAUTHORIZED
             )
+        
+        print(f"✅ User authenticated: {user_id}")
         return view_func(request, *args, **kwargs)
     return wrapper
 
