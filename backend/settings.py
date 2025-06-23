@@ -151,7 +151,7 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 ]
 
 # Allow all origins during development (will be restricted in production)
-CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)  # EMERGENCY FIX: Railway needs to redeploy!
+CORS_ALLOW_ALL_ORIGINS = True  # FORCE ENABLE for Vercel deployment issue
 
 CORS_ALLOW_CREDENTIALS = True
 
