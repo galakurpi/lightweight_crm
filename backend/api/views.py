@@ -18,10 +18,7 @@ def test_api(request):
     """Test endpoint to check if Django API is working"""
     return Response({
         'message': 'Django API is working!',
-        'status': 'success',
-        'cors_allow_all_origins': getattr(settings, 'CORS_ALLOW_ALL_ORIGINS', False),
-        'cors_allowed_origins': getattr(settings, 'CORS_ALLOWED_ORIGINS', []),
-        'cors_allowed_origin_regexes': getattr(settings, 'CORS_ALLOWED_ORIGIN_REGEXES', [])
+        'status': 'success'
     })
 
 # Create your views here.
