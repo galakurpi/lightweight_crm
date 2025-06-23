@@ -151,7 +151,7 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 ]
 
 # Allow all origins during development (will be restricted in production)
-CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=False, cast=bool)
+CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)  # TEMPORARY FIX for Vercel deploy issue
 
 CORS_ALLOW_CREDENTIALS = True
 
