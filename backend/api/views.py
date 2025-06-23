@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import check_password
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -433,8 +434,13 @@ def chat_message(request):
             request.session.create()
         session_key = request.session.session_key
         
+        # Debug: Check Celery/Redis connection
+        print(f"🔗 Attempting to start Celery task...")
+        print(f"Redis URL: {getattr(settings, 'CELERY_BROKER_URL', 'Not configured')}")
+        
         # Initiate async task with conversation_id and user_id
         task = process_chat_message.delay(message, session_key, conversation_id=conversation_id, user_id=user_id)
+        print(f"✅ Celery task started: {task.id}")
         
         return Response({
             'task_id': task.id,
