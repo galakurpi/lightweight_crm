@@ -147,7 +147,20 @@ CORS_ALLOWED_ORIGINS = [
 
 # Allow any Vercel preview deployment (matches whatever hash they generate)
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https://[A-Za-z0-9-]+\.vercel\.app$",
+    r"^https://.+\.vercel\.app$",  # Loosen regex to ensure all vercel subdomains are matched
+]
+
+# Fallback for proxies that might strip the Origin header
+CORS_REPLACE_HTTPS_REFERER = True
+
+# Explicitly allow headers your frontend might be sending
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "authorization",
+    "content-type",
+    "origin",
+    "x-csrftoken",
+    "x-requested-with",
 ]
 
 # Allow all origins during local development only.
