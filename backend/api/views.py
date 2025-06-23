@@ -429,86 +429,64 @@ def chat_message(request):
         # Save user message to database
         SupabaseService.create_message(conversation_id, message, is_user=True)
         
-        # Try Celery first, if it fails use threading as fallback
-        try:
-            # Get or create session
-            if not request.session.session_key:
-                request.session.create()
-            session_key = request.session.session_key
-            
-            # Debug: Check Celery/Redis connection
-            print(f"🔗 Attempting to start Celery task...")
-            print(f"Redis URL: {getattr(settings, 'CELERY_BROKER_URL', 'Not configured')}")
-            
-            # Initiate async task with conversation_id and user_id
-            task = process_chat_message.delay(message, session_key, conversation_id=conversation_id, user_id=user_id)
-            print(f"✅ Celery task started: {task.id}")
-            
-            return Response({
-                'task_id': task.id,
-                'conversation_id': conversation_id,
-                'status': 'processing',
-                'message': 'Message received, processing...'
-            })
-            
-        except Exception as celery_error:
-            print(f"❌ Celery failed (probably memory issues): {celery_error}")
-            print("🔄 Using threading fallback...")
-            
-            # Threading fallback when Celery workers are killed
-            import threading
-            import uuid
-            from django.core.cache import cache
-            
-            # Generate a task ID for polling
-            task_id = str(uuid.uuid4())
-            
-            # Set initial status
-            cache.set(f"task_{task_id}", {'state': 'PROCESSING', 'status': 'Processing your message...'}, 300)
-            
-            def process_in_thread():
-                try:
-                    from .chat_service import ChatService
-                    
-                    # Get current leads for context
-                    leads = SupabaseService.get_all_leads(user_id=user_id)
-                    
-                    # Initialize chat service
-                    chat_service = ChatService()
-                    
-                    # Process the message
-                    session_key = request.session.session_key or f'thread_{task_id}'
-                    response = chat_service.process_message(
-                        message, 
-                        session_key, 
-                        leads, 
-                        conversation_id=conversation_id, 
-                        user_id=user_id
-                    )
-                    
-                    # Store result in cache
-                    cache.set(f"task_{task_id}", {
-                        'state': 'SUCCESS',
-                        'result': response
-                    }, 300)
-                    
-                except Exception as e:
-                    cache.set(f"task_{task_id}", {
-                        'state': 'FAILURE',
-                        'error': str(e)
-                    }, 300)
-            
-            # Start processing in background thread
-            thread = threading.Thread(target=process_in_thread)
-            thread.daemon = True
-            thread.start()
-            
-            return Response({
-                'task_id': task_id,
-                'conversation_id': conversation_id,
-                'status': 'processing',
-                'message': 'Message received, processing with threading fallback...'
-            })
+        # Force threading fallback since Celery workers keep getting killed
+        print(f"🔄 Skipping Celery (workers killed by Railway) - using threading...")
+        
+        # Threading approach when Celery workers are killed by memory limits
+        import threading
+        import uuid
+        from django.core.cache import cache
+        
+        # Generate a task ID for polling
+        task_id = str(uuid.uuid4())
+        
+        # Set initial status
+        cache.set(f"task_{task_id}", {'state': 'PROCESSING', 'status': 'Processing your message...'}, 300)
+        
+        def process_in_thread():
+            try:
+                from .chat_service import ChatService
+                
+                # Get current leads for context
+                leads = SupabaseService.get_all_leads(user_id=user_id)
+                
+                # Initialize chat service
+                chat_service = ChatService()
+                
+                # Process the message
+                session_key = request.session.session_key or f'thread_{task_id}'
+                response = chat_service.process_message(
+                    message, 
+                    session_key, 
+                    leads, 
+                    conversation_id=conversation_id, 
+                    user_id=user_id
+                )
+                
+                # Store result in cache
+                cache.set(f"task_{task_id}", {
+                    'state': 'SUCCESS',
+                    'result': response
+                }, 300)
+                
+            except Exception as e:
+                print(f"Threading error: {e}")
+                cache.set(f"task_{task_id}", {
+                    'state': 'FAILURE',
+                    'error': str(e)
+                }, 300)
+        
+        # Start processing in background thread
+        thread = threading.Thread(target=process_in_thread)
+        thread.daemon = True
+        thread.start()
+        
+        return Response({
+            'task_id': task_id,
+            'conversation_id': conversation_id,
+            'status': 'processing',
+            'message': 'Message received, processing with threading...'
+        })
         
     except Exception as e:
         return Response(
