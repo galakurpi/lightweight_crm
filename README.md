@@ -35,8 +35,9 @@ A modern, lightweight Customer Relationship Management (CRM) system built with D
 
 ### Backend Setup
 
-1. **Navigate to the project root:**
+1. **Clone the repository:**
    ```bash
+   git clone <repository-url>
    cd lightweight_crm
    ```
 
