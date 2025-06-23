@@ -142,11 +142,12 @@ SUPABASE_KEY = config('SUPABASE_KEY')
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # React development server
     "http://127.0.0.1:3000",
-    # Vercel production domains
-    "https://lightweight-d6519wrjz-jons-projects-f84a4607.vercel.app",
-    "https://lightweight-gc2px1edf-jons-projects-f84a4607.vercel.app",  # New deployment
     "https://lightweight-crm-indol.vercel.app",  # Main Vercel domain
-    # Add future Vercel domains here
+]
+
+# Allow all Vercel preview deployments using regex pattern
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://lightweight-.*\.vercel\.app$",  # Any Vercel deployment for this project
 ]
 
 # Allow all origins during development (will be restricted in production)
@@ -154,11 +155,11 @@ CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=False, cast=bo
 
 CORS_ALLOW_CREDENTIALS = True
 
-# CSRF settings for cross-origin requests
+# CSRF settings for cross-origin requests  
 CSRF_TRUSTED_ORIGINS = [
-    "https://lightweight-d6519wrjz-jons-projects-f84a4607.vercel.app",
-    "https://lightweight-gc2px1edf-jons-projects-f84a4607.vercel.app",  # New deployment
     "https://lightweight-crm-indol.vercel.app",
+    # Pattern to match all Vercel preview deployments
+    "https://*.vercel.app",
 ]
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = 'None'
