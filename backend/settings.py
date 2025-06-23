@@ -150,8 +150,11 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://lightweight-.*\.vercel\.app$",  # Matches: lightweight-qgudsb820-jons-projects-f84a4607.vercel.app
 ]
 
-# Allow all origins during development (will be restricted in production)
-CORS_ALLOW_ALL_ORIGINS = True  # FORCE ENABLE for Vercel deployment issue
+# Allow all origins during local development only.
+# IMPORTANT: When using credentials (cookies) the wildcard "*" cannot be used.
+# Therefore keep this disabled in production so that the middleware reflects the
+# requesting Origin when it matches the allowed list/regex above.
+CORS_ALLOW_ALL_ORIGINS = False
 
 CORS_ALLOW_CREDENTIALS = True
 
