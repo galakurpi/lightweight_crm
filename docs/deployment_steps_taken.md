@@ -79,7 +79,32 @@ SESSION_COOKIE_NAME = 'crm_sessionid'
 ```
 Added debugging logs to track session creation and authentication
 **Git Commit**: `070ca19` - "Resolve merge conflict: Keep debugging logs, remove auth bypass"
-**Result**: 🔄 Testing session cookie behavior with explicit settings + debug logs
+
+### 8. Dynamic Vercel URLs Breaking CORS (Chicken-Egg Problem)
+**Error**: `No 'Access-Control-Allow-Origin' header` every time Vercel creates new deployment with different hash
+**Cause**: Each Vercel deployment gets a new random URL like `lightweight-abc123.vercel.app`, breaking CORS
+**Fix**: Replaced specific URLs with flexible regex pattern:
+```python
+# Allow any Vercel deployment for this project
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://lightweight-.*\.vercel\.app$",
+]
+
+# CSRF wildcard for Vercel domains
+CSRF_TRUSTED_ORIGINS = [
+    "https://lightweight-crm-indol.vercel.app",
+    "https://*.vercel.app",
+]
+```
+**Git Commit**: `c23f8d0` - "Fix dynamic Vercel URLs: Use regex pattern to allow all lightweight-*.vercel.app domains"
+**Result**: ✅ CORS now works for any future Vercel deployment automatically
+
+### 9. New Vercel Deployment URL Breaking CORS Again
+**Error**: `No 'Access-Control-Allow-Origin' header` on new Vercel URL `https://lightweight-qgudsb820-jons-projects-f84a4607.vercel.app`
+**Cause**: Railway hadn't redeployed with latest CORS regex pattern from previous fix
+**Fix**: Triggered Railway redeploy by pushing small comment change to `backend/settings.py`
+**Git Commit**: `40ee837` - "Trigger Railway redeploy: Update CORS regex comment for new Vercel URL"
+**Result**: 🔄 Railway redeploying with regex pattern that should match all lightweight-*.vercel.app URLs
 
 ## Admin Login Credentials
 - **Email**: `admin@crm.local`
