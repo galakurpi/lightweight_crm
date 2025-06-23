@@ -461,7 +461,11 @@ def chat_status(request, task_id):
     Poll for task status and results
     """
     try:
+        print(f"🔍 Checking task status for: {task_id}")
+        
         task_result = AsyncResult(task_id)
+        print(f"📊 Task state: {task_result.state}")
+        print(f"📋 Task info: {task_result.info}")
         
         if task_result.state == 'PENDING':
             response = {
@@ -490,9 +494,11 @@ def chat_status(request, task_id):
                 'status': 'Unknown task state'
             }
         
+        print(f"📤 Returning response: {response}")
         return Response(response)
         
     except Exception as e:
+        print(f"❌ Error checking task status: {e}")
         return Response(
             {'error': 'Failed to get task status', 'details': str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
