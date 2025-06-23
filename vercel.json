@@ -11,6 +11,21 @@
   ],
   "routes": [
     {
+      "src": "/manifest.json",
+      "dest": "/frontend/manifest.json",
+      "headers": {
+        "Cache-Control": "public, max-age=86400"
+      }
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "/frontend/favicon.ico"
+    },
+    {
+      "src": "/logo(.*).png",
+      "dest": "/frontend/logo$1.png"
+    },
+    {
       "src": "/(.*)",
       "dest": "/frontend/$1"
     }
