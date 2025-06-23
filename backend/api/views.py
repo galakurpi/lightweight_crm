@@ -456,6 +456,7 @@ def chat_message(request):
         )
 
 @api_view(['GET'])
+@require_authentication
 def chat_status(request, task_id):
     """
     Poll for task status and results
