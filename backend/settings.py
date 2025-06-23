@@ -46,7 +46,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    'backend.api.middleware.SimpleCorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -139,37 +139,40 @@ SUPABASE_URL = config('SUPABASE_URL')
 SUPABASE_KEY = config('SUPABASE_KEY')
 
 # CORS settings for React frontend - Updated for production
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # React development server
-    "http://127.0.0.1:3000",
-    "https://lightweight-crm-indol.vercel.app",  # Main Vercel domain
-]
-
-# Allow any Vercel preview deployment (matches whatever hash they generate)
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https://.+\.vercel\.app$",  # Loosen regex to ensure all vercel subdomains are matched
-]
-
-# Fallback for proxies that might strip the Origin header
-CORS_REPLACE_HTTPS_REFERER = True
-
-# Explicitly allow headers your frontend might be sending
-CORS_ALLOW_HEADERS = [
-    "accept",
-    "authorization",
-    "content-type",
-    "origin",
-    "x-csrftoken",
-    "x-requested-with",
-]
-
-# Allow all origins during local development only.
-# IMPORTANT: When using credentials (cookies) the wildcard "*" cannot be used.
-# Therefore keep this disabled in production so that the middleware reflects the
-# requesting Origin when it matches the allowed list/regex above.
-CORS_ALLOW_ALL_ORIGINS = False
-
-CORS_ALLOW_CREDENTIALS = True
+# All CORS logic is now handled by SimpleCorsMiddleware in backend/api/middleware.py
+# Keeping these commented out for reference, but they are no longer used.
+#
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",  # React development server
+#     "http://127.0.0.1:3000",
+#     "https://lightweight-crm-indol.vercel.app",  # Main Vercel domain
+# ]
+#
+# # Allow any Vercel preview deployment (matches whatever hash they generate)
+# CORS_ALLOWED_ORIGIN_REGEXES = [
+#     r"^https://.+\.vercel\.app$",  # Loosen regex to ensure all vercel subdomains are matched
+# ]
+# 
+# # Fallback for proxies that might strip the Origin header
+# CORS_REPLACE_HTTPS_REFERER = True
+# 
+# # Explicitly allow headers your frontend might be sending
+# CORS_ALLOW_HEADERS = [
+#     "accept",
+#     "authorization",
+#     "content-type",
+#     "origin",
+#     "x-csrftoken",
+#     "x-requested-with",
+# ]
+# 
+# # Allow all origins during local development only.
+# # IMPORTANT: When using credentials (cookies) the wildcard "*" cannot be used.
+# # Therefore keep this disabled in production so that the middleware reflects the
+# # requesting Origin when it matches the allowed list/regex above.
+# CORS_ALLOW_ALL_ORIGINS = False
+# 
+# CORS_ALLOW_CREDENTIALS = True
 
 # CSRF settings for cross-origin requests  
 CSRF_TRUSTED_ORIGINS = [
