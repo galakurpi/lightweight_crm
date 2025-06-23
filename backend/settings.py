@@ -142,7 +142,10 @@ SUPABASE_KEY = config('SUPABASE_KEY')
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # React development server
     "http://127.0.0.1:3000",
-    # Add your Vercel domain here after deployment
+    # Vercel production domains
+    "https://lightweight-d6519wrjz-jons-projects-f84a4607.vercel.app",
+    "https://lightweight-crm-indol.vercel.app",  # Main Vercel domain
+    # Add future Vercel domains here
 ]
 
 # Allow all origins during development (will be restricted in production)
