@@ -45,7 +45,9 @@ const ChatWidget = ({ onLeadsUpdated }) => {
 
     pollingIntervalRef.current = setInterval(async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/chat/status/${taskId}/`);
+        const response = await fetch(`${API_BASE_URL}/chat/status/${taskId}/`, {
+          credentials: 'include', // Include session cookies for authentication
+        });
         const data = await response.json();
 
         if (data.state === 'SUCCESS') {
