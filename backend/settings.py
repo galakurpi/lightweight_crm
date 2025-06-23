@@ -144,6 +144,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     # Vercel production domains
     "https://lightweight-d6519wrjz-jons-projects-f84a4607.vercel.app",
+    "https://lightweight-gc2px1edf-jons-projects-f84a4607.vercel.app",  # New deployment
     "https://lightweight-crm-indol.vercel.app",  # Main Vercel domain
     # Add future Vercel domains here
 ]
@@ -156,6 +157,7 @@ CORS_ALLOW_CREDENTIALS = True
 # CSRF settings for cross-origin requests
 CSRF_TRUSTED_ORIGINS = [
     "https://lightweight-d6519wrjz-jons-projects-f84a4607.vercel.app",
+    "https://lightweight-gc2px1edf-jons-projects-f84a4607.vercel.app",  # New deployment
     "https://lightweight-crm-indol.vercel.app",
 ]
 CSRF_COOKIE_SECURE = True
