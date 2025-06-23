@@ -153,6 +153,14 @@ CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=False, cast=bo
 
 CORS_ALLOW_CREDENTIALS = True
 
+# CSRF settings for cross-origin requests
+CSRF_TRUSTED_ORIGINS = [
+    "https://lightweight-d6519wrjz-jons-projects-f84a4607.vercel.app",
+    "https://lightweight-crm-indol.vercel.app",
+]
+CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=not DEBUG, cast=bool)
+CSRF_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'
+
 # Django REST Framework settings
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
@@ -182,3 +190,9 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# Production session cookie settings for cross-origin requests
+SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=not DEBUG, cast=bool)  # HTTPS only in production
+SESSION_COOKIE_HTTPONLY = True  # Prevent XSS attacks
+SESSION_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'  # Allow cross-origin in production
+SESSION_COOKIE_DOMAIN = config('SESSION_COOKIE_DOMAIN', default=None)  # Allow cross-domain cookies

@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import check_password
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -23,6 +24,7 @@ def test_api(request):
 
 # Authentication endpoints
 @api_view(['POST'])
+@csrf_exempt
 def login_view(request):
     """User login with email and password"""
     try:
