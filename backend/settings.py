@@ -11,8 +11,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-import os
-from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,13 +20,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-t*b$xz4^yarzn5(-6u^zanbg*9l3y2=50@4+*b8apgo3r7)rqf')
+SECRET_KEY = 'django-insecure-t*b$xz4^yarzn5(-6u^zanbg*9l3y2=50@4+*b8apgo3r7)rqf'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = True
 
-# Updated ALLOWED_HOSTS for Railway deployment
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,*.railway.app').split(',')
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -40,15 +37,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
-    'corsheaders',
-    'backend.api',
 ]
 
 MIDDLEWARE = [
-    'backend.api.middleware.SimpleCorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -123,100 +115,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# Whitenoise configuration for serving static files
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Supabase Configuration
-SUPABASE_URL = config('SUPABASE_URL')
-SUPABASE_KEY = config('SUPABASE_KEY')
-
-# CORS settings for React frontend - Updated for production
-# All CORS logic is now handled by SimpleCorsMiddleware in backend/api/middleware.py
-# Keeping these commented out for reference, but they are no longer used.
-#
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:3000",  # React development server
-#     "http://127.0.0.1:3000",
-#     "https://lightweight-crm-indol.vercel.app",  # Main Vercel domain
-# ]
-#
-# # Allow any Vercel preview deployment (matches whatever hash they generate)
-# CORS_ALLOWED_ORIGIN_REGEXES = [
-#     r"^https://.+\.vercel\.app$",  # Loosen regex to ensure all vercel subdomains are matched
-# ]
-# 
-# # Fallback for proxies that might strip the Origin header
-# CORS_REPLACE_HTTPS_REFERER = True
-# 
-# # Explicitly allow headers your frontend might be sending
-# CORS_ALLOW_HEADERS = [
-#     "accept",
-#     "authorization",
-#     "content-type",
-#     "origin",
-#     "x-csrftoken",
-#     "x-requested-with",
-# ]
-# 
-# # Allow all origins during local development only.
-# # IMPORTANT: When using credentials (cookies) the wildcard "*" cannot be used.
-# # Therefore keep this disabled in production so that the middleware reflects the
-# # requesting Origin when it matches the allowed list/regex above.
-# CORS_ALLOW_ALL_ORIGINS = False
-# 
-# CORS_ALLOW_CREDENTIALS = True
-
-# CSRF settings for cross-origin requests  
-CSRF_TRUSTED_ORIGINS = [
-    "https://lightweight-crm-indol.vercel.app",
-    # Pattern to match all Vercel preview deployments
-    "https://*.vercel.app",
-]
-CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_SAMESITE = 'None'
-CSRF_COOKIE_HTTPONLY = False  # Frontend needs to read CSRF token
-
-# Django REST Framework settings
-REST_FRAMEWORK = {
-    'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',
-    ],
-    'DEFAULT_PARSER_CLASSES': [
-        'rest_framework.parsers.JSONParser',
-    ],
-}
-
-# OpenAI Configuration
-OPENAI_API_KEY = config('OPENAI_API_KEY')
-
-# Celery Configuration - Updated for Railway Redis
-CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = TIME_ZONE
-CELERY_TASK_TRACK_STARTED = True
-CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
-CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # 25 minutes
-
-# Session Configuration for Chat Context
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-SESSION_COOKIE_AGE = 86400  # 24 hours
-SESSION_SAVE_EVERY_REQUEST = True
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False
-
-# Production session cookie settings for cross-origin requests
-SESSION_COOKIE_SECURE = True  # Always use HTTPS in production
-SESSION_COOKIE_HTTPONLY = True  # Prevent XSS attacks
-SESSION_COOKIE_SAMESITE = 'None'  # Required for cross-origin cookies
-SESSION_COOKIE_DOMAIN = None  # Don't set domain to allow cross-domain
-SESSION_COOKIE_NAME = 'crm_sessionid'  # Custom session cookie name
