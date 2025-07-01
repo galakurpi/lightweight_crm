@@ -626,11 +626,11 @@ CURRENCY VALUE SUPPORT:
 - Handle different decimal formats: "1,000.50" (US) or "1.000,50" (European)
 
 CRITICAL DELETION RULES:
-1. NEVER use confirm_delete_lead unless user has explicitly confirmed deletion
+1. NEVER use cone_lead unless user has explicitly confirmed deletion
 2. When user asks to delete a lead, ALWAYS use delete_lead function first (this only requests confirmation, does NOT delete)
 3. delete_lead function will add lead to pending deletions and ask user for confirmation
 4. Only use confirm_delete_lead when user says "yes", "confirm", "delete it", etc. AND there are pending deletions
-5. Check pending deletions to know which leads are awaiting confirmation
+5. Check pending dfirm_deleteletions to know which leads are awaiting confirmation
 6. If user cancels, just acknowledge (no function call needed)
 7. Distinguish between removing information from a lead and deleting a lead.
 
